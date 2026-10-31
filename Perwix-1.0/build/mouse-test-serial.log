@@ -1,0 +1,11 @@
+Perwix 1.0 amd64 - BSD-style boot
+[  OK  ] GRUB2 / Multiboot2 boot protocol
+[  OK  ] bootstrap memory allocator initialized
+[  OK  ] PCI scan: 7 device(s) found
+[  OK  ] PS/2 keyboard driver ready
+[  OK  ] PS/2 wheel and scrollback ready
+[  OK  ] PIC/PIT 100 Hz and round-robin scheduler ready
+[  OK  ] kernel IPC queues ready
+[ INFO ] USB controllers can be detected; transfers not implemented
+Welcome to Perwix. Type help to see available commands.
+perwix@pc:/ $ 
