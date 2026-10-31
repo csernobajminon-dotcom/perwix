@@ -1,5 +1,5 @@
 $ErrorActionPreference = 'Stop'
-$qemu = 'E:\Program Files\qemu\qemu-system-aarch64.exe'
+$qemu = 'qemu-system-aarch64.exe'
 $kernel = Join-Path $PSScriptRoot 'build\arm64\perwix-arm64.elf'
 
 if (-not (Test-Path -LiteralPath $qemu)) {
