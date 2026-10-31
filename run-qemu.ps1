@@ -1,5 +1,5 @@
 $ErrorActionPreference = 'Stop'
-$qemu = 'E:\Program Files\qemu\qemu-system-x86_64.exe'
+$qemu = 'qemu-system-x86_64.exe'
 $iso = Join-Path $PSScriptRoot 'build\Perwix-1.0-amd64.iso'
 
 if (-not (Test-Path -LiteralPath $qemu)) {
