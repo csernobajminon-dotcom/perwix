@@ -1,3 +1,5 @@
+![Perwix 1.1](assets/screenshot.png)
+
 # Perwix 1.1
 
 Perwix is a new operating-system project with an x86-64 PC build and an
