@@ -1,5 +1,5 @@
-[English](#en--english)
-#en-english
+[English](#en--english) [Russian](#ru--russian)
+#en
 # Contributing to Perwix
 
 Thanks for helping with Perwix. It is an early hobby OS, so please keep pull
@@ -49,8 +49,7 @@ commit generated `build/` files or ISO images.
    hardware result. Mention any limitation that remains.
 
 For a small typo or documentation fix, a concise pull request is enough.
-[Russian](#ru--russian)
-#ru--russian
+#ru 
 # Вклад в развитие Perwix
 
 Спасибо за помощь в работе над Perwix. Поскольку это любительский проект операционной системы на ранней стадии разработки, пожалуйста, делайте пул-реквесты (pull requests) узконаправленными: четко описывайте, что именно было реализовано и как вы это проверили.
