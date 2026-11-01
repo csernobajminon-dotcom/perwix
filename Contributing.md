@@ -139,7 +139,6 @@ Do not label a controller-family stub or an untested implementation as a working
 - Не включайте серийные номера, пароли прошивок, личные файлы, данные Wi-Fi или другую конфиденциальную информацию в задачи, скриншоты или логи.
 
 ### 📁 Структура проекта
-Будьте обачні, використовуючи код.
 • kernel/boot/ — 💻 код входа для x86-64 Multiboot2.
 • kernel/arch/x86_64/ — 💻 поддержка прерываний и MMIO для x86-64.
 • kernel/arch/aarch64/ — 📱 экспериментальный запуск ядра в QEMU для ARM64.
