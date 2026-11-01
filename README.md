@@ -1,6 +1,6 @@
 ![Perwix 1.2](assets/screenshot.png)
 
-Perwix 1.2
+
 Perwix 1.2 is an experimental operating-system kernel targeting x86-64, with a separate experimental ARM64 build for QEMU.
 Perwix 1.2 is not yet a general-purpose desktop operating system. Some drivers and subsystems are experimental. Detecting a device does not mean that all of its functions are supported.
 
