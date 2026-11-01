@@ -1,131 +1,130 @@
-![Perwix 1.1](assets/screenshot.png)
+![Perwix 1.2](assets/screenshot.png)
 
-# Perwix 1.1
+Perwix 1.2
+Perwix 1.2 is an experimental operating-system kernel targeting x86-64, with a separate experimental ARM64 build for QEMU.
+Perwix 1.2 is not yet a general-purpose desktop operating system. Some drivers and subsystems are experimental. Detecting a device does not mean that all of its functions are supported.
 
-Perwix is a new operating-system project with an x86-64 PC build and an
-experimental ARM64 build. The x86-64 image boots with GRUB2; ARM64 currently
-boots on QEMU's `virt` machine with a PL011 serial console.
+Perwix 1.2 Features
+Boot and Architecture
+- x86-64: GRUB and Multiboot2 boot support; hybrid BIOS/UEFI ISO build.
+- ARM64: a separate experimental ELF build for QEMU virt. This is not a finished port for physical ARM devices.
+- Architecture-specific code is organized under kernel/arch/.
+Console, Graphics, and UTF-8
+- Framebuffer output supplied by the bootloader. HDMI availability depends on the graphics card, firmware, and video mode provided by GRUB/UEFI.
+- Pixel bitmap font without software anti-aliasing: glyphs are drawn without scaling.
+- UTF-8 decoding for shell text and filenames, limited to the glyphs available in the bundled font.
+- Ukrainian and US keyboard layouts, switchable with Alt+Shift.
+- Text-mode fallback.
+Limitations: the framebuffer is not a universal standalone HDMI driver. Perwix cannot guarantee support for every monitor mode or every Unicode character.
+ELF Modules and Commands
+- Commands and some drivers are provided as separate ELF modules.
+- The loader handles ELF64 and the x86-64 relocations required by the modules.
+- Modules interact with the kernel through its API.
+Limitations: modules execute in kernel mode (ring 0). Isolated user-mode execution in ring 3, full address-space protection, and a complete system-call model are not yet implemented.
+Storage and File Systems
+- Initial ATA/IDE PIO support and LBA28 sector reads.
+- MBR and GPT partition-table detection.
+- diskpart is a separate ELF command for inspecting disks, partitions, and volumes.
+- FAT32: mounting a supported partition and reading files and directories.
+- Other formats may be recognized by their signatures, but recognition does not mean they can be mounted or read.
+Examples of shell commands for the available FAT32 file system:
+ls
+pwd
+cd <directory>
+cat <file>
+mount
+Basic diskpart commands:
+diskpart help
+diskpart list disk
+diskpart select disk 0
+diskpart detail disk
+diskpart list partition
+diskpart list volume
+diskpart rescan
+Limitations: current FAT32 and diskpart functionality is read-only. Do not use it to partition or format disks. Full SATA/AHCI, NVMe, and USB mass-storage support requires additional drivers.
+Networking and USB
+- kernel/net/ contains network interfaces and a polling network stack.
+- kernel/drivers/ contains PCI/USB-controller detection, input, and network-adapter code.
+- Experimental NIC module families include Intel e1000, Realtek RTL8139/RTL8169, VirtIO Net, AMD PCnet32, and NE2000.
+- USB code performs basic detection and initial bring-up for UHCI, OHCI, EHCI, and xHCI controllers.
+USB limitations: full USB transfer scheduling, device enumeration, USB HID, and USB mass storage are not yet implemented. USB4 routing/tunneling is also unsupported. Laptop input support is limited: PS/2 keyboard input is available, while USB HID and I2C-HID are not yet implemented.
+Project Structure
+Path	Purpose
+kernel/boot/	💻 x86-64 Multiboot2 entry point
+kernel/arch/x86_64/	💻 x86-64 interrupts and MMIO
+kernel/arch/aarch64/	📱 Experimental ARM64 startup for QEMU
+kernel/core/	Console, shell, commands, scheduler, IPC, memory allocator, and Perwix logo
+kernel/drivers/	PCI, initial USB-controller support, input, and NIC drivers
+kernel/net/	Network interfaces and polling network stack
+kernel/fs/	VFS interfaces and file-system implementations
+grub/	GRUB configuration and boot-menu artwork
+tools/	Development utilities, including font generation
+build.sh	💻 Build x86-64 ELF and hybrid BIOS/UEFI ISO
+build-arm64.sh	📱 Experimental ARM64 ELF build
+run-qemu.ps1	💻 Run x86-64 QEMU in BIOS-style mode
+run-qemu-uefi.ps1	💻 Run x86-64 QEMU with OVMF/UEFI
+run-qemu-arm64.ps1	📱 Run ARM64 QEMU virt
 
-## What boots today
 
-- GRUB2 loads the Perwix ELF kernel from a hybrid BIOS/UEFI ISO. Its boot screen follows the classic FreeBSD text-loader layout: an ASCII `PERWIX` wordmark at the top left, the original colored artwork sourced from `kernel/core/logo.c` at the right, and a double-line `Welcome to Perwix` menu frame. The live menu offers Perwix multi-user, single-user, loader prompt, reboot, kernel, and boot-options entries. Use Up/Down and Enter; press `C` for the GRUB command prompt.
-- The kernel enters 64-bit mode, writes its boot status to VGA and COM1, and
-  reads the Multiboot2 memory map. The boot logo is not repeated during kernel
-  startup; it remains available through `logo` and `neofetch`.
-- A bootstrap physical-page allocator reserves pages from usable RAM.
-- The 100 Hz PIT interrupt drives a round-robin preemptive scheduler for
-  ring-0 kernel threads.
-- Two kernel threads exchange messages through bounded IPC queues.
-- A polling PS/2 keyboard driver feeds the built-in command shell.
-- A PS/2 wheel mouse can scroll through 256 lines of console history.
-- PCI configuration mechanism #1 scans devices and identifies USB host
-  controller classes, including UHCI, OHCI, EHCI and xHCI. The USB bring-up
-  path enables PCI I/O or memory decoding and attempts the controller-specific
-  reset sequence for all four families. xHCI root-port status is sampled.
-- A pluggable network layer (`kernel/net/`) with NIC drivers for e1000,
-  RTL8139, RTL8169/8168, virtio-net, AMD PCnet32 and NE2000-PCI, plus a
-  polling stack: ARP, IPv4, ICMP, UDP, DHCP client, DNS resolver, a minimal
-  TCP client and HTTP/1.0 GET (no TLS/HTTPS).
-- The shell includes system and network tools plus diagnostic commands such as
-  `sysinfo`, `meminfo`, `tickinfo`, `usbinfo`, `usbports`, `usbgen`, `netstat`,
-  `rand [COUNT]`, `beep [HZ]`, `pciinfo`, `drivercheck`, `logo`, `displayinfo`,
-  `utf8test`, `uptimefmt`, `tickrate`, `pageinfo`, `kversion`, `drvcount`,
-  `cpuidmax`, and `hex NUMBER`.
-- Destructive power commands (`reboot`, `poweroff`, `shutdown`, `halt`) show
-  an interactive safety prompt. Arrow keys move the selection, Enter confirms,
-  Esc cancels, and the default selection is **NO**.
-- VFS and driver registries define extension points for future services.
-- Console output preserves UTF-8 byte sequences on the COM1 serial stream, so
-  a serial terminal configured for UTF-8 can display Ukrainian and other
-  Unicode text. Legacy VGA text mode cannot render arbitrary Unicode glyphs;
-  non-ASCII code points are represented by `?` there to keep cursor layout sane.
-- `displayinfo` documents the active display backend. The current console is
-  still VGA text 80x25 plus serial, and the `logo` command downsamples the
-  original artwork to a compact 24x10 character grid; `neofetch` uses a 20x9 grid. Dynamic framebuffer resolutions/scaling are not implemented
-  yet.
-- GRUB boot flags are read from the Multiboot2 command-line tag: `single`
-  enters a maintenance shell with network/USB bring-up skipped, `safe` does
-  the same hardware reduction without the maintenance label, and `verbose`
-  prints detailed kernel startup status.
+Building Perwix 1.2
+Windows + WSL Environment
+The documented workflow uses Windows PowerShell 5.1 or later and Ubuntu under WSL. Keep the project in a path without non-ASCII characters to avoid encoding issues in build tools, for example:
+E:\Perwix\Perwix-1.2
+x86-64 Dependencies
+Install the required packages in Ubuntu under WSL:
+sudo apt update
+sudo apt install build-essential nasm grub-common grub-pc-bin \
+  grub-efi-amd64-bin xorriso mtools
+Run the build from PowerShell (example for a project stored on drive E:):
+wsl -d Ubuntu -- bash -lc 'cd /mnt/e/Perwix/Perwix-1.2 && chmod +x build.sh && ./build.sh'
+Expected output:
+build/Perwix-1.2-amd64.iso
+build.sh checks for GCC, the linker, NASM, grub-mkrescue, xorriso, and the GRUB x86_64-efi modules. The code is built as freestanding x86-64 with -Wall -Wextra -Werror. Do not disable these checks to hide code errors.
+Experimental ARM64 Build
+The ARM64 build is a separate QEMU preview, not an x86-64 ISO or a finished port for physical ARM devices. Clang and LLD are required in the build environment.
+./build-arm64.sh
+Expected output:
+build/arm64/perwix-arm64.elf
+Testing in QEMU
+After successfully building the ISO, run this from PowerShell:
+.\run-qemu.ps1
+By default, the script expects QEMU at:
+E:\Program Files\qemu\qemu-system-x86_64.exe
+If QEMU is installed elsewhere, change the $qemu value in the script. The default profile emulates Q35, xHCI, an e1000 network adapter, and user-mode networking.
 
-This is an early kernel, not yet a complete desktop OS. The current scheduler
-does not run user processes; all current tasks remain in ring 0. The USB layer
-recognizes UHCI, OHCI, EHCI and xHCI and attempts each controller's basic reset
-sequence. USB transfer schedules/rings, device enumeration, USB HID and USB
-mass storage are not implemented yet. USB4 router/tunneling management is
-also not implemented. Networking uses one wired Ethernet adapter at a time
-(first supported PCI NIC found). Wi-Fi, IPv6, HTTPS/TLS and TCP retransmission/congestion control
-are not implemented. Only the e1000 path had been exercised on a running VM
-before the extra NIC drivers were added; the other drivers are written from
-the datasheets and need testing (RTL8169 especially on real hardware). VFS and driver registries are interfaces only. No disk,
-graphics, audio, or filesystem drivers are claimed as implemented yet.
+For UEFI/OVMF:
+.\run-qemu-uefi.ps1
+If the script cannot find OVMF automatically, pass the firmware paths explicitly:
+.\run-qemu-uefi.ps1 -OvmfCode 'C:\path\OVMF_CODE.fd' `
+  -OvmfVars 'C:\path\OVMF_VARS.fd'
+The OVMF variables file is copied to build before QEMU starts, so the original firmware template is not modified.
 
-## Build on this Windows PC
+For ARM64 QEMU:
+.\run-qemu-arm64.ps1
+First Boot on Physical Hardware
+Testing on physical hardware is optional. Use a spare USB drive and boot Perwix 1.2 without installing it, changing disk partitions, or editing the Windows boot configuration. Back up important data first.
 
-The build script uses the installed Ubuntu WSL distribution for GCC, NASM,
-GRUB2 and xorriso. QEMU is the Windows installation at
-E:\Program Files\qemu.
+For the first attempt, select Safe mode + verbose diagnostics in the GRUB menu. Record the device manufacturer and exact model, CPU architecture, firmware mode, and the last message visible on screen. A screen photo can also help with diagnosis.
 
-From PowerShell in this project directory:
+A Snapdragon/ARM device cannot boot the x86-64 image. A working display does not mean that the built-in keyboard, touchpad, Wi-Fi, storage, audio, or power management will work.
 
-    wsl -d Ubuntu -- bash -lc 'cd /mnt/e/HybridOS/Perwix-1.1 && chmod +x build.sh && ./build.sh'
-
-The ISO is written to build/Perwix-1.1-amd64.iso. Run it in QEMU with:
-
-    .\run-qemu.ps1
-
-Click the QEMU window to focus the emulated keyboard, then type `help` at the
-`perwix@pc:/ $` prompt. The QEMU profile includes an emulated xHCI controller
-so the `usb` command has a controller to report; USB device transfers are not
-available yet. QEMU user-mode networking and an emulated e1000 NIC are enabled;
-try `ifconfig`, `dhcp`, `ping 10.0.2.2`, `nslookup example.com`. The runner
-accepts `-Nic e1000|rtl8139|virtio-net-pci|pcnet|ne2k_pci` to pick the emulated
-adapter.
-
-The QEMU runner uses TCG because hardware virtualization is disabled in the
-machine firmware. If virtualization is enabled later, the runner can use WHPX.
-
-## Hardware direction
-
-The target is the x86-64 PC architecture, not one specific computer. The
-current image boots through a custom Perwix-branded GRUB2 menu and uses the
-legacy PIC/PIT, PS/2 keyboard, PCI configuration ports, and serial/VGA output. UHCI/OHCI provide basic USB
-1.x controller reset, EHCI basic USB 2.0 controller reset, and xHCI basic USB
-2.0/3.x controller reset. These are controller bring-up paths, not complete
-USB device drivers. USB4 router/tunneling management, USB transfers, ACPI/APIC,
-storage, full Internet protocols, graphics and hardware-specific drivers
-remain future work. The ARM64 preview is a separate minimal kernel, not yet a
-port of the x86-64 scheduler, shell input, USB, or network drivers. Supporting
-every PC device requires a growing set of tested drivers.
-
-## ARM64 QEMU preview
-
-Build the ARM64 ELF with:
-
-    wsl -d Ubuntu -- bash -lc 'cd /mnt/e/HybridOS/Perwix-1.1 && ./build-arm64.sh'
-
-Run it with `.\run-qemu-arm64.ps1`. This build currently has a PL011 serial
-shell with `help`, `about`, `arch`, `version`, `uptime`, `drivers`,
-`echo`, and `clear`.
-
-## Roadmap
-
-1. Finish kernel memory protection, user-mode tasks, system calls, and IPC.
-2. Move device services out of the kernel and isolate them behind capabilities.
-3. Add USB host transfers and HID keyboard/mouse, then storage drivers.
-4. Add DHCP, DNS, TCP/HTTP and network drivers beyond the QEMU e1000 profile.
-5. Port PCIe, USB, storage, and network drivers to ARM64.
-6. Add VFS and filesystem services: memory filesystem, FAT32, ISO9660, ext2,
-   and read-only NTFS support as separate milestones.
-7. Add graphics, audio, and hardware-specific drivers.
-
-Perwix starts with an x86-64 generic kernel profile. Driver coverage will grow
-by standard interface and tested hardware family.
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the build steps and pull request
-workflow. Shell command descriptions and messages live in
-`kernel/core/shell.c`; boot messages live in `kernel/core/main.c`; ARM64 serial
-shell text lives in `kernel/arch/aarch64/main.c`. GitHub pull requests use the
-template under `.github/`.
+Do not test experimental disk or firmware operations on a computer containing important data.
+Contributing
+Before making changes:
+1. Read this README.md and check existing issues and pull requests.
+2. For substantial changes, first describe the problem, design, target architecture, and test hardware.
+3. Include the exact build and test commands and actual results in your pull request.
+4. Do not include serial numbers, firmware passwords, personal files, Wi-Fi passwords, or other private information in reports.
+Kernel and Driver Guidelines
+- Keep kernel code freestanding: do not use the host C library, hosted OS APIs, or dynamic runtime initialization.
+- Follow the -Wall -Wextra -Werror policy. Fix warnings instead of globally disabling them.
+- Use fixed-width integer types for hardware structures and registers.
+- Validate bounds, lengths, alignment, offsets, and address arithmetic before accessing data.
+- Access MMIO through existing helper functions and account for current physical-memory mappings.
+- Handle errors, status bits, and timeouts; do not wait for devices in unbounded loops.
+- Keep interrupt handlers short.
+- Place architecture-specific code under kernel/arch/<architecture>/.
+- Do not call a driver complete merely because a PCI ID or controller class was detected. State whether the implementation only detects or resets a device, enumerates it, transfers data, or supports an actual device class.
+For a new driver, include supported vendor/device IDs or class/subclass/prog-if values, a specification reference, initialization sequence, register/DMA assumptions, alignment requirements, error handling, and a test report identifying the exact QEMU device or physical hardware.
+License
+Refer to the repository's license file for licensing and redistribution terms. If no license file exists, do not assume a license automatically.
